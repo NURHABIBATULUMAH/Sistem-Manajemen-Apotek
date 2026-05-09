@@ -1,0 +1,96 @@
+/* assets/css/style.css */
+
+:root {
+  --sidebar-width: 230px;
+  --sidebar-bg: #1e2a3a;
+  --sidebar-color: #adb5bd;
+  --sidebar-active: #ffffff;
+  --sidebar-hover-bg: rgba(255,255,255,0.08);
+}
+
+/* ---- LAYOUT ---- */
+body { background-color: #f4f6f9; font-size: 14px; }
+
+#wrapper { min-height: calc(100vh - 56px); }
+
+/* ---- SIDEBAR ---- */
+#sidebar {
+  width: var(--sidebar-width);
+  min-height: calc(100vh - 56px);
+  background-color: var(--sidebar-bg);
+  position: sticky;
+  top: 56px;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+#sidebar .nav-link {
+  color: var(--sidebar-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  transition: background .15s;
+}
+#sidebar .nav-link:hover { background: var(--sidebar-hover-bg); color: #fff; }
+#sidebar .nav-link.active { background: var(--bs-primary); color: var(--sidebar-active); }
+#sidebar .nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #6c757d;
+  padding: 4px 12px;
+}
+
+/* ---- CONTENT ---- */
+#content { min-width: 0; }
+
+/* ---- CARD ---- */
+.card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-radius: 10px; }
+.card-header { background: #fff; border-bottom: 1px solid #f0f0f0; font-weight: 500; }
+
+/* ---- STAT CARD ---- */
+.stat-card { border-radius: 10px; padding: 1.25rem; color: #fff; }
+.stat-card .stat-icon { font-size: 2rem; opacity: .8; }
+.stat-card .stat-value { font-size: 1.6rem; font-weight: 600; }
+.stat-card .stat-label { font-size: 12px; opacity: .85; }
+
+/* ---- TABLE ---- */
+.table thead th { font-size: 12px; font-weight: 600; text-transform: uppercase;
+                  letter-spacing: .04em; color: #6c757d; border-top: none; }
+.table tbody td { vertical-align: middle; font-size: 13px; }
+
+/* ---- BADGE STATUS ---- */
+.badge-menunggu   { background: #fff3cd; color: #856404; }
+.badge-diproses   { background: #cfe2ff; color: #084298; }
+.badge-selesai    { background: #d1e7dd; color: #0a3622; }
+.badge-dibatalkan { background: #f8d7da; color: #842029; }
+.badge-diterima   { background: #d1e7dd; color: #0a3622; }
+.badge-pending    { background: #fff3cd; color: #856404; }
+.badge-kritis     { background: #f8d7da; color: #842029; }
+.badge-perhatian  { background: #fff3cd; color: #856404; }
+.badge-aman       { background: #d1e7dd; color: #0a3622; }
+
+/* ---- ALERT STOK ---- */
+.stok-kritis  { color: #dc3545; font-weight: 600; }
+.stok-rendah  { color: #fd7e14; font-weight: 500; }
+.stok-aman    { color: #198754; }
+
+/* ---- FORM ---- */
+.form-label { font-size: 13px; font-weight: 500; color: #495057; }
+.form-control, .form-select { font-size: 13px; }
+
+/* ---- BUTTON ---- */
+.btn { font-size: 13px; }
+.btn-action { padding: 3px 8px; font-size: 12px; }
+
+/* ---- PAGE HEADER ---- */
+.page-header { margin-bottom: 1.5rem; }
+.page-header h4 { font-weight: 600; color: #1e2a3a; margin: 0; }
+.page-header .breadcrumb { font-size: 12px; margin: 0; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  #sidebar { display: none !important; }
+  #content { padding: 1rem !important; }
+}
