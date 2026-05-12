@@ -5,7 +5,7 @@
 
 $serverName = "."; 
 $connectionInfo = array(
-    "Database" => "ApotekHabibah", // Nama database baru yang kita buat tadi
+    "Database" => "db_apotek", // Nama database baru yang kita buat tadi
     "UID" => "", 
     "PWD" => "",
     "CharacterSet" => "UTF-8"
