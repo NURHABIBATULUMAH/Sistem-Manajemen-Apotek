@@ -25,9 +25,10 @@ body { background-color: #f4f6f9; font-size: 14px; }
 }
 
 #sidebar .nav-link {
+  /* margin-bottom: 4px; */
   color: var(--sidebar-color);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 13px;
   transition: background .15s;
 }
@@ -39,7 +40,7 @@ body { background-color: #f4f6f9; font-size: 14px; }
   letter-spacing: .08em;
   text-transform: uppercase;
   color: #6c757d;
-  padding: 4px 12px;
+  padding: 100px 12px;
 }
 
 /* ---- CONTENT ---- */
