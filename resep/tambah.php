@@ -1,61 +1,175 @@
 <?php
+// ============================================================
+// resep/tambah.php - Versi Simple & Proteksi Stok Ketat
+// ============================================================
+
 define('BASE_URL', '..'); 
 require_once __DIR__ . '/../config/database.php';
 session_start();
-$halaman = 'Tambah Resep';
-require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/sidebar.php';
 
-// Ambil nomor resep berikutnya
-$cek = db_fetch_one($conn, "SELECT TOP 1 no_resep FROM resep_header ORDER BY id_resep DESC");
-$no_urut = ($cek) ? (int)substr($cek['no_resep'], 2) + 1 : 1;
-$no_resep_baru = "R-" . str_pad($no_urut, 2, "0", STR_PAD_LEFT);
+if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
-$pelanggan = db_fetch_all($conn, "SELECT id_pelanggan, nama_pelanggan FROM pelanggan WHERE is_active = 1");
-$obat = db_fetch_all($conn, "SELECT id_obat, nama_obat FROM obat WHERE is_active = 1");
+// 1. DATA MASTER
+$pelanggan = db_fetch_all($conn, "SELECT id_pelanggan, nama_pelanggan, kode_pelanggan FROM pelanggan WHERE is_active = 1");
+$obat_list = db_fetch_all($conn, "SELECT id_obat, nama_obat, stok FROM obat WHERE is_active = 1");
+
+// 2. LOGIKA SIMPAN
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['items'])) {
+    $no_resep = "RSP-" . date('YmdHis');
+    $id_pel   = $_POST['id_pelanggan'];
+    $dokter   = $_POST['nama_dokter'];
+    $id_ptg   = $_SESSION['petugas']['id_petugas'];
+
+    $sql_h = "INSERT INTO resep_header (no_resep, id_pelanggan, id_petugas, nama_dokter, tgl_resep, status) 
+              VALUES (?, ?, ?, ?, GETDATE(), 'diproses'); SELECT SCOPE_IDENTITY() AS id;";
+    
+    $stmt_h = sqlsrv_query($conn, $sql_h, [$no_resep, $id_pel, $id_ptg, $dokter]);
+    sqlsrv_next_result($stmt_h);
+    $res_h = sqlsrv_fetch_array($stmt_h, SQLSRV_FETCH_ASSOC);
+    $id_resep = $res_h['id'];
+
+    if ($id_resep) {
+        foreach ($_POST['items'] as $it) {
+            sqlsrv_query($conn, "INSERT INTO resep_detail (id_resep, id_obat, qty, dosis, aturan_pakai) VALUES (?,?,?,?,?)", 
+                        [$id_resep, $it['id_obat'], $it['qty'], $it['dosis'], $it['aturan']]);
+        }
+        echo "<script>alert('Resep Dokter Berhasil Disimpan!'); location.href='index.php';</script>";
+        exit;
+    }
+}
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Buat Resep - Apotek Sehat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
 
-<div class="container-fluid">
-    <h4 class="mt-4"><i class="bi bi-file-earmark-medical me-2 text-info"></i>Input Resep Dokter</h4>
-    <form action="simpan_resep.php" method="POST">
-        <div class="row mt-3">
-            <div class="col-md-4">
-                <div class="card shadow-sm border-info">
-                    <div class="card-body">
-                        <div class="mb-3"><label class="fw-bold">No. Resep</label><input type="text" name="no_resep" class="form-control fw-bold text-primary" value="<?= $no_resep_baru ?>" readonly></div>
-                        <div class="mb-3"><label class="fw-bold">Pasien</label><select name="id_pelanggan" class="form-select" required><option value="">-- Pilih --</option><?php foreach($pelanggan as $p): ?><option value="<?= $p['id_pelanggan'] ?>"><?= $p['nama_pelanggan'] ?></option><?php endforeach; ?></select></div>
-                        <div class="mb-3"><label class="fw-bold">Dokter</label><input type="text" name="nama_dokter" class="form-control" required></div>
-                        <div class="mb-0"><label class="fw-bold">Tanggal</label><input type="date" name="tgl_resep" class="form-control" value="<?= date('Y-m-d') ?>"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between"><span>Detail Obat</span><button type="button" class="btn btn-sm btn-info text-white" onclick="tambah()">+ Baris</button></div>
-                    <div class="card-body p-0">
-                        <table class="table mb-0">
-                            <thead class="table-light"><tr><th>Obat</th><th width="10%">Qty</th><th>Dosis</th><th>Aturan</th><th width="5%"></th></tr></thead>
-                            <tbody id="box"></tbody>
-                        </table>
-                    </div>
-                    <div class="card-footer text-end"><button type="submit" class="btn btn-info text-white px-5 fw-bold">SIMPAN RESEP</button></div>
-                </div>
-            </div>
+<?php include '../includes/sidebar.php'; ?>
+
+<div id="content">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0">Input Resep Dokter</h4>
+            <span class="badge bg-white text-danger border px-3 py-2 shadow-sm rounded-pill">
+                <i class="bi bi-shield-lock me-1"></i> Strict Stock Check
+            </span>
         </div>
-    </form>
+
+        <form method="POST" id="form-resep">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card-custom shadow-sm p-4 bg-white sticky-top" style="top:25px;">
+                        <div class="mb-3">
+                            <label class="text-label mb-2">NAMA DOKTER</label>
+                            <input type="text" name="nama_dokter" class="form-control" placeholder="Contoh: dr. Ahmad" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="text-label mb-2">PILIH PASIEN</label>
+                            <select name="id_pelanggan" class="form-select" required>
+                                <option value="">-- Cari Pasien --</option>
+                                <?php foreach($pelanggan as $p): ?>
+                                    <option value="<?= $p['id_pelanggan'] ?>"><?= $p['kode_pelanggan'] ?> - <?= $p['nama_pelanggan'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="alert alert-warning border-0 small rounded-4 shadow-sm mb-4">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Sistem akan menolak resep jika obat yang dipilih memiliki stok 0 di gudang.
+                        </div>
+
+                        <button type="submit" id="btn-simpan" class="btn btn-primary btn-lg w-100 rounded-3 fw-bold py-3 shadow" disabled>
+                            SIMPAN RESEP
+                        </button>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card-custom p-0 shadow-sm overflow-hidden bg-white">
+                        <div class="d-flex justify-content-between align-items-center p-4">
+                            <h6 class="fw-bold mb-0">Daftar Obat (Cek Stok Master)</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="addRow()">+ Tambah Baris</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light small text-muted">
+                                    <tr>
+                                        <th class="ps-4 py-3">OBAT</th>
+                                        <th width="12%">QTY</th>
+                                        <th width="20%">DOSIS</th>
+                                        <th width="25%">ATURAN</th>
+                                        <th width="5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="area-item"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-let idx = 0; const obs = <?= json_encode($obat) ?>;
-function tambah() {
-    idx++; const row = `<tr id="r-${idx}">
-        <td><select name="items[${idx}][id_obat]" class="form-select form-select-sm" required><option value="">-- Pilih --</option>${obs.map(o => `<option value="${o.id_obat}">${o.nama_obat}</option>`).join('')}</select></td>
-        <td><input type="number" name="items[${idx}][qty]" class="form-control form-control-sm" value="1" required></td>
-        <td><input type="text" name="items[${idx}][dosis]" class="form-control form-control-sm" placeholder="3x1" required></td>
-        <td><select name="items[${idx}][aturan_pakai]" class="form-select form-select-sm" required><option value="Sesudah Makan">Sesudah Makan</option><option value="Sebelum Makan">Sebelum Makan</option><option value="Saat Perut Kosong">Saat Perut Kosong</option></select></td>
-        <td><button type="button" class="btn btn-sm text-danger" onclick="document.getElementById('r-${idx}').remove()">x</button></td></tr>`;
-    document.getElementById('box').insertAdjacentHTML('beforeend', row);
+const listObat = <?= json_encode($obat_list) ?>;
+let rowIdx = 0;
+
+function addRow() {
+    rowIdx++;
+    const row = `<tr class="tr-item" id="row-${rowIdx}">
+        <td class="ps-4">
+            <select name="items[${rowIdx}][id_obat]" class="form-select select-obat" onchange="validasi()" required>
+                <option value="">-- Pilih --</option>
+                ${listObat.map(o => `<option value="${o.id_obat}" data-stok="${o.stok}">${o.nama_obat} (Stok: ${o.stok})</option>`).join('')}
+            </select>
+        </td>
+        <td><input type="number" name="items[${rowIdx}][qty]" class="form-control in-q" value="1" min="1" oninput="validasi()" required></td>
+        <td><input type="text" name="items[${rowIdx}][dosis]" class="form-control" placeholder="3x1" required></td>
+        <td><input type="text" name="items[${rowIdx}][aturan]" class="form-control" placeholder="Setelah Makan" required></td>
+        <td><button type="button" class="btn btn-sm text-danger" onclick="this.closest('tr').remove();validasi();"><i class="bi bi-trash"></i></button></td>
+    </tr>`;
+    document.getElementById('area-item').insertAdjacentHTML('beforeend', row);
+    validasi();
 }
-tambah();
+
+function validasi() {
+    let aman = true;
+    let adaItem = false;
+
+    document.querySelectorAll('.tr-item').forEach(tr => {
+        adaItem = true;
+        const sel = tr.querySelector('.select-obat');
+        const opt = sel.options[sel.selectedIndex];
+        
+        if (sel.value !== '') {
+            const stok = parseInt(opt.dataset.stok) || 0;
+            const qty  = parseInt(tr.querySelector('.in-q').value) || 0;
+
+            // PROTEKSI KERAS: Jika stok 0 atau qty melebihi stok, baris merah
+            if (stok <= 0 || qty > stok) {
+                tr.style.backgroundColor = '#fff1f0';
+                tr.querySelector('.in-q').classList.add('is-invalid');
+                aman = false;
+            } else {
+                tr.style.backgroundColor = 'transparent';
+                tr.querySelector('.in-q').classList.remove('is-invalid');
+            }
+        } else { aman = false; }
+    });
+
+    document.getElementById('btn-simpan').disabled = (!aman || !adaItem);
+}
+
+addRow();
 </script>
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

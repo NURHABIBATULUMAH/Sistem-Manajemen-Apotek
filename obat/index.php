@@ -1,97 +1,81 @@
 <?php
 define('BASE_URL', '..'); 
-require_once __DIR__ . '/../config/database.php'; 
+require_once __DIR__ . '/../config/database.php';
 session_start();
 
-$halaman = 'Stok Obat per Batch';
-require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/sidebar.php';
+if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
-/**
- * QUERY INI ADALAH KUNCI:
- * Kita tidak ambil dari tabel 'obat' saja, tapi JOIN ke 'pembelian_detail'.
- * Ini yang bikin tampilannya pecah per Expired Date.
- */
-$sql = "SELECT 
-            o.id_obat, 
-            o.kode_obat,
-            o.nama_obat, 
-            pd.stok_sisa, 
-            pd.tgl_kadaluarsa, 
-            s.nama_supplier,
-            ph.no_pembelian
-        FROM pembelian_detail pd
-        JOIN obat o ON pd.id_obat = o.id_obat
-        JOIN pembelian_header ph ON pd.id_pembelian = ph.id_pembelian
-        JOIN supplier s ON ph.id_supplier = s.id_supplier
-        WHERE pd.stok_sisa > 0
-        ORDER BY o.nama_obat ASC, pd.tgl_kadaluarsa ASC";
-
-$daftar_stok = db_fetch_all($conn, $sql);
+// Query Monitoring Stok: Menggunakan nama kolom rill (stok_sisa, harga_satuan)
+$sql = "SELECT o.nama_obat, pd.tgl_kadaluarsa, pd.stok_sisa, pd.harga_satuan, 
+        DATEDIFF(day, GETDATE(), pd.tgl_kadaluarsa) as sisa_hari
+        FROM pembelian_detail pd 
+        LEFT JOIN obat o ON pd.id_obat = o.id_obat 
+        WHERE pd.stok_sisa > 0 
+        ORDER BY pd.tgl_kadaluarsa ASC";
+$stok_list = db_fetch_all($conn, $sql);
 ?>
-
-<div class="container-fluid">
-    <div class="page-header mt-4 d-flex justify-content-between align-items-center">
-        <div>
-            <h4><i class="bi bi-box-seam me-2 text-primary"></i>Daftar Stok per Batch (Expired)</h4>
-            <p class="text-muted small">Data stok yang tampil di sini murni berdasarkan barang masuk dari Supplier.</p>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitoring Stok - Apotek Sehat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<?php include '../includes/sidebar.php'; ?>
+<div id="content">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-0">Monitoring Stok (FEFO)</h4>
+                <p class="text-muted small mb-0">Stok ditampilkan per batch tanggal kadaluarsa.</p>
+            </div>
+            <a href="master.php" class="btn btn-dark rounded-pill px-4 shadow-sm">
+                <i class="bi bi-gear-fill me-1"></i> Kelola Data Master
+            </a>
         </div>
-        <div class="btn-group">
-            <a href="tambah.php" class="btn btn-outline-primary btn-sm">Daftar Master Baru</a>
-            <a href="../pembelian/tambah.php" class="btn btn-success btn-sm">Input Stok Supplier</a>
-        </div>
-    </div>
 
-    <div class="card shadow-sm mt-3">
-        <div class="card-body p-0">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th class="ps-3">Nama Obat</th>
-                        <th>No. Faktur</th>
-                        <th>Supplier</th>
-                        <th class="text-center">Stok Sisa</th>
-                        <th class="text-center">Tgl. Expired</th>
-                        <th>Status</th>
-                        <th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($daftar_stok)): ?>
-                        <tr><td colspan="7" class="text-center py-5">Belum ada barang masuk dari supplier.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($daftar_stok as $ds): 
-                            $exp = $ds['tgl_kadaluarsa'];
-                            $skrg = new DateTime();
-                            $diff = $skrg->diff($exp);
-                            $hari = (int)$diff->format("%r%a");
-
-                            $row_class = ""; $status = '<span class="badge bg-success">Aman</span>';
-                            if ($hari <= 0) {
-                                $row_class = "table-dark text-white";
-                                $status = '<span class="badge bg-secondary">EXPIRED</span>';
-                            } elseif ($hari <= 30) {
-                                $row_class = "table-warning";
-                                $status = '<span class="badge bg-danger">MAU EXPIRED</span>';
-                            }
-                        ?>
-                            <tr class="<?= $row_class ?>">
-                                <td class="ps-3 fw-bold"><?= $ds['nama_obat'] ?></td>
-                                <td><small><?= $ds['no_pembelian'] ?></small></td>
-                                <td><?= $ds['nama_supplier'] ?></td>
-                                <td class="text-center fw-bold"><?= $ds['stok_sisa'] ?></td>
-                                <td class="text-center"><?= $ds['tgl_kadaluarsa']->format('d/m/Y') ?></td>
-                                <td><?= $status ?></td>
+        <div class="card-custom shadow-sm border-0 overflow-hidden bg-white">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr class="small text-muted text-uppercase">
+                            <th class="ps-4 py-3">Nama Obat</th>
+                            <th>Kadaluarsa</th>
+                            <th class="text-center">Sisa Stok</th>
+                            <th>Harga Beli</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if(empty($stok_list)): ?>
+                            <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada stok aktif di gudang.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($stok_list as $s): ?>
+                            <tr>
+                                <td class="ps-4 fw-bold"><?= $s['nama_obat'] ?></td>
+                                <td><i class="bi bi-calendar3 me-2"></i><?= $s['tgl_kadaluarsa']->format('d M Y') ?></td>
+                                <td class="text-center fw-bold text-primary"><?= $s['stok_sisa'] ?></td>
+                                <td>Rp <?= number_format($s['harga_satuan'], 0, ',', '.') ?></td>
                                 <td class="text-center">
-                                    <a href="edit.php?id=<?= $ds['id_obat'] ?>" class="btn btn-sm btn-link"><i class="bi bi-pencil"></i></a>
+                                    <?php if($s['sisa_hari'] < 0): ?>
+                                        <span class="badge bg-danger rounded-pill px-3">Expired</span>
+                                    <?php elseif($s['sisa_hari'] < 90): ?>
+                                        <span class="badge bg-warning text-dark rounded-pill px-3">Dekat Exp (<?= $s['sisa_hari'] ?> hari)</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-3">Aman</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+</body>
+</html>

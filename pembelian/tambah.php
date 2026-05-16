@@ -1,149 +1,132 @@
 <?php
-// ============================================================
-// pembelian/tambah.php — Form Stok Masuk (Auto-Faktur & FEFO)
-// ============================================================
-
 define('BASE_URL', '..'); 
 require_once __DIR__ . '/../config/database.php';
 session_start();
 
-$halaman = 'Tambah Stok Supplier';
-require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/sidebar.php';
+if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
-// --- LOGIKA NOMOR PEMBELIAN OTOMATIS (FKT-20260512-001) ---
-$hari_ini = date('Ymd'); // Hasilnya: 20260512
-$query_cek = "SELECT TOP 1 no_pembelian FROM pembelian_header 
-              WHERE no_pembelian LIKE 'FKT-$hari_ini%' 
-              ORDER BY no_pembelian DESC";
-$cek_data = db_fetch_one($conn, $query_cek);
+$obat_list = db_fetch_all($conn, "SELECT id_obat, nama_obat, harga_beli FROM obat WHERE is_active = 1");
+$supplier  = db_fetch_all($conn, "SELECT id_supplier, nama_supplier FROM supplier");
 
-if ($cek_data) {
-    // Jika sudah ada transaksi hari ini, ambil 3 digit terakhir dan tambah 1
-    $last_no = (int)substr($cek_data['no_pembelian'], -3);
-    $no_urut = $last_no + 1;
-} else {
-    // Jika belum ada transaksi hari ini, mulai dari 1
-    $no_urut = 1;
-}
-$nomor_otomatis = "FKT-" . $hari_ini . "-" . str_pad($no_urut, 3, "0", STR_PAD_LEFT);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['items'])) {
+    $no_beli = "PO-" . date('YmdHis');
+    $id_sup  = $_POST['id_supplier'];
+    $total   = $_POST['total_harga'];
+    $id_ptg  = $_SESSION['petugas']['id_petugas']; 
 
-// Ambil Data Master
-$supplier = db_fetch_all($conn, "SELECT id_supplier, nama_supplier FROM supplier WHERE is_active = 1");
-$obat_list = db_fetch_all($conn, "SELECT id_obat, nama_obat FROM obat WHERE is_active = 1");
-?>
-
-<div class="container-fluid">
-    <div class="page-header mt-4">
-        <h4><i class="bi bi-truck me-2 text-primary"></i>Input Stok Masuk Supplier</h4>
-        <p class="text-muted">Gunakan form ini untuk mencatat obat yang datang dari supplier.</p>
-    </div>
+    // Header: Menggunakan tgl_pesan dan status 'diterima'
+    $sql_h = "INSERT INTO pembelian_header (no_pembelian, id_supplier, id_petugas, tgl_pesan, total_harga, status) 
+              VALUES (?, ?, ?, GETDATE(), ?, 'diterima'); SELECT SCOPE_IDENTITY() AS id;";
     
-    <form action="simpan_pembelian.php" method="POST">
-        <div class="row mt-3">
-            <div class="col-md-3">
-                <div class="card shadow-sm border-primary mb-3">
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="fw-bold small">Nomor Pembelian</label>
-                            <input type="text" name="no_pembelian" class="form-control fw-bold text-primary bg-light" 
-                                   value="<?= $nomor_otomatis ?>" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold small">Supplier</label>
-                            <select name="id_supplier" class="form-select border-primary" required>
-                                <option value="">-- Pilih Supplier --</option>
-                                <?php foreach($supplier as $s): ?>
-                                    <option value="<?= $s['id_supplier'] ?>"><?= $s['nama_supplier'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="mb-0">
-                            <label class="fw-bold small">Tgl. Pesan / Masuk</label>
-                            <input type="date" name="tgl_pesan" class="form-control" value="<?= date('Y-m-d') ?>">
-                        </div>
-                    </div>
-                </div>
-                <div class="alert alert-info small">
-                    <i class="bi bi-info-circle me-1"></i> 
-                    Nomor faktur digenerate otomatis berdasarkan tanggal hari ini.
-                </div>
-            </div>
+    $params_h = [$no_beli, $id_sup, $id_ptg, $total];
+    $stmt_h = sqlsrv_query($conn, $sql_h, $params_h);
 
-            <div class="col-md-9">
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
-                        <span class="fw-bold"><i class="bi bi-capsule-pill me-2"></i>Rincian Obat & Expired</span>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="tambahBaris()">
-                            <i class="bi bi-plus-lg me-1"></i> Tambah Baris
-                        </button>
+    if ($stmt_h === false) {
+        die("<pre>Error Header: " . print_r(sqlsrv_errors(), true) . "</pre>");
+    }
+
+    sqlsrv_next_result($stmt_h);
+    $res_h = sqlsrv_fetch_array($stmt_h, SQLSRV_FETCH_ASSOC);
+    $id_pembelian = $res_h['id'];
+
+    if ($id_pembelian) {
+        foreach ($_POST['items'] as $it) {
+            $ido = (int)$it['id_obat'];
+            $qty = (int)$it['qty'];
+            $hrg = (float)$it['harga'];
+            $exp = $it['exp'];
+            $sub = $qty * $hrg;
+
+            // Detail: Sesuai kolom rill qty_pesan, qty_terima, harga_satuan, stok_sisa
+            $sql_d = "INSERT INTO pembelian_detail (id_pembelian, id_obat, qty_pesan, qty_terima, harga_satuan, subtotal, tgl_kadaluarsa, stok_sisa) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            sqlsrv_query($conn, $sql_d, [$id_pembelian, $ido, $qty, $qty, $hrg, $sub, $exp, $qty]);
+            
+            // Update stok di tabel master
+            sqlsrv_query($conn, "UPDATE obat SET stok = stok + ? WHERE id_obat = ?", [$qty, $ido]);
+        }
+        echo "<script>alert('Stok Berhasil Masuk!'); location.href='index.php';</script>";
+        exit;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Input Pembelian - Apotek Sehat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<?php include '../includes/sidebar.php'; ?>
+<div id="content">
+    <div class="container-fluid">
+        <h4 class="fw-bold mb-4">Input Pembelian Baru</h4>
+        <form method="POST">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="card-custom shadow-sm p-4 bg-white sticky-top" style="top:20px;">
+                        <label class="text-label mb-2">SUPPLIER</label>
+                        <select name="id_supplier" class="form-select mb-4" required>
+                            <option value="">-- Pilih Supplier --</option>
+                            <?php foreach($supplier as $s): ?>
+                                <option value="<?= $s['id_supplier'] ?>"><?= $s['nama_supplier'] ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="bg-dark p-4 rounded-4 text-center mb-4">
+                            <div class="text-white-50 small mb-1">TOTAL BAYAR</div>
+                            <h2 class="text-white fw-bold mb-0" id="txt-total">Rp 0</h2>
+                            <input type="hidden" name="total_harga" id="inp-total">
+                        </div>
+                        <button type="submit" id="btn-simpan" class="btn btn-primary btn-lg w-100 rounded-3 fw-bold py-3 shadow" disabled>SIMPAN STOK</button>
                     </div>
-                    <div class="card-body p-0">
+                </div>
+                <div class="col-lg-8">
+                    <div class="card-custom p-0 shadow-sm overflow-hidden bg-white text-dark">
+                        <div class="p-4 d-flex justify-content-between"><h6 class="fw-bold mb-0">Item Barang</h6><button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="addRow()">+ Tambah</button></div>
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0 align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="35%">Nama Obat</th>
-                                        <th width="12%">Qty</th>
-                                        <th width="20%">Harga Beli</th>
-                                        <th width="20%">Expired Date</th>
-                                        <th width="5%"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="area-pembelian">
-                                    </tbody>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light small text-muted"><tr><th class="ps-4">OBAT</th><th width="20%">HARGA</th><th width="15%">QTY</th><th width="25%">EXP</th><th width="5%"></th></tr></thead>
+                                <tbody id="area-item"></tbody>
                             </table>
                         </div>
                     </div>
-                    <div class="card-footer text-end bg-white py-3">
-                        <a href="index.php" class="btn btn-secondary me-2">Batal</a>
-                        <button type="submit" class="btn btn-success px-5 fw-bold shadow">
-                            <i class="bi bi-save me-2"></i> SIMPAN STOK
-                        </button>
-                    </div>
                 </div>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
-
 <script>
-let idx = 0;
-const obats = <?= json_encode($obat_list) ?>;
-
-/**
- * Fungsi untuk menambah baris obat secara dinamis
- */
-function tambahBaris() {
-    idx++;
-    const row = `
-    <tr id="r-${idx}">
-        <td>
-            <select name="items[${idx}][id_obat]" class="form-select form-select-sm" required>
-                <option value="">-- Pilih Obat --</option>
-                ${obats.map(o => `<option value="${o.id_obat}">${o.nama_obat}</option>`).join('')}
-            </select>
-        </td>
-        <td>
-            <input type="number" name="items[${idx}][qty]" class="form-control form-control-sm" min="1" placeholder="0" required>
-        </td>
-        <td>
-            <input type="number" name="items[${idx}][harga_beli]" class="form-control form-control-sm" placeholder="Rp" required>
-        </td>
-        <td>
-            <input type="date" name="items[${idx}][tgl_kadaluarsa]" class="form-control form-control-sm" required>
-        </td>
-        <td>
-            <button type="button" class="btn btn-sm text-danger" onclick="document.getElementById('r-${idx}').remove()">
-                <i class="bi bi-trash"></i>
-            </button>
-        </td>
+const listObat = <?= json_encode($obat_list) ?>;
+let rowIdx = 0;
+function addRow() {
+    rowIdx++;
+    const row = `<tr class="tr-item">
+        <td class="ps-4"><select name="items[${rowIdx}][id_obat]" class="form-select" onchange="autoHarga(this, ${rowIdx})" required><option value="">-- Pilih --</option>${listObat.map(o => `<option value="${o.id_obat}" data-h="${o.harga_beli}">${o.nama_obat}</option>`).join('')}</select></td>
+        <td><input type="number" name="items[${rowIdx}][harga]" id="h-${rowIdx}" class="form-control" oninput="hitung()" required></td>
+        <td><input type="number" name="items[${rowIdx}][qty]" class="form-control" value="1" min="1" oninput="hitung()" required></td>
+        <td><input type="date" name="items[${rowIdx}][exp]" class="form-control" required></td>
+        <td><button type="button" class="btn btn-sm text-danger" onclick="this.closest('tr').remove();hitung();"><i class="bi bi-trash"></i></button></td>
     </tr>`;
-    document.getElementById('area-pembelian').insertAdjacentHTML('beforeend', row);
+    document.getElementById('area-item').insertAdjacentHTML('beforeend', row);
+    hitung();
 }
-
-// Munculkan 1 baris kosong saat pertama kali load
-tambahBaris();
+function autoHarga(el, id) { document.getElementById(`h-${id}`).value = el.options[el.selectedIndex].dataset.h || 0; hitung(); }
+function hitung() {
+    let grand = 0; let adaItem = false;
+    document.querySelectorAll('.tr-item').forEach(tr => {
+        adaItem = true;
+        const h = parseFloat(tr.querySelector('input[name*="[harga]"]').value) || 0;
+        const q = parseFloat(tr.querySelector('input[name*="[qty]"]').value) || 0;
+        grand += (h * q);
+    });
+    document.getElementById('txt-total').innerText = 'Rp ' + grand.toLocaleString('id-ID');
+    document.getElementById('inp-total').value = grand;
+    document.getElementById('btn-simpan').disabled = !adaItem;
+}
+addRow();
 </script>
-
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+</body>
+</html>
