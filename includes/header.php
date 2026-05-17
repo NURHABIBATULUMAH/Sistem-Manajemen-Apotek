@@ -42,7 +42,7 @@ if (strpos($petugas['nama_petugas'], ' ') !== false) {
   <div class="topbar-left">
     <div class="topbar-page-title"><?= htmlspecialchars($halaman) ?></div>
     <div class="topbar-breadcrumb">
-      <i class="bi bi-house-door me-1"></i>MediPharm
+      <i class="bi bi-house-door me-1"></i>MedPharm
       <span class="mx-1" style="color:#ccc">/</span>
       <?= htmlspecialchars($halaman) ?>
     </div>

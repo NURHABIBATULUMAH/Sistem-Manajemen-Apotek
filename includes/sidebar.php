@@ -34,8 +34,8 @@ $base_url = BASE_URL ?? '';
       <i class="bi bi-heart-pulse"></i>
     </div>
     <div>
-      <span class="sidebar-brand-name">MediPharm</span>
-      <span class="sidebar-brand-sub">Sistem Apotek</span>
+      <span class="sidebar-brand-name">MedPharm</span>
+      <span class="sidebar-brand-sub">Sistem Manajemen Apotek</span>
     </div>
   </div>
  
