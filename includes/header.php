@@ -1,64 +1,67 @@
 <?php
 // ============================================================
-// includes/header.php
+// includes/header.php — Medical Elegant Theme
 // ============================================================
-
-// Mulai session jika belum
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Redirect ke login jika belum login
+ 
+if (session_status() === PHP_SESSION_NONE) session_start();
+ 
 if (!isset($_SESSION['petugas'])) {
     header('Location: ' . BASE_URL . '/login.php');
     exit;
 }
-
+ 
 $petugas  = $_SESSION['petugas'];
 $halaman  = $halaman  ?? 'Dashboard';
 $base_url = BASE_URL   ?? '';
+$initials = strtoupper(substr($petugas['nama_petugas'], 0, 1));
+if (strpos($petugas['nama_petugas'], ' ') !== false) {
+    $parts = explode(' ', $petugas['nama_petugas']);
+    $initials = strtoupper($parts[0][0] . $parts[1][0]);
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($halaman) ?> — Apotek</title>
-
-  <!-- Bootstrap 5 -->
+  <title><?= htmlspecialchars($halaman) ?> — MediPharm</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-  <!-- Custom CSS -->
   <link href="<?= $base_url ?>/assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-
-<!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary px-3 sticky-top shadow-sm">
-  <a class="navbar-brand fw-semibold" href="<?= $base_url ?>/index.php">
-    <i class="bi bi-capsule me-2"></i>Apotek
-  </a>
-  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav ms-auto align-items-center gap-2">
-      <li class="nav-item">
-        <span class="text-white-50 small">
-          <i class="bi bi-person-circle me-1"></i>
-          <?= htmlspecialchars($petugas['nama_petugas']) ?>
-          <span class="badge bg-light text-primary ms-1"><?= ucfirst($petugas['role']) ?></span>
-        </span>
-      </li>
-      <li class="nav-item">
-        <a class="btn btn-outline-light btn-sm" href="<?= $base_url ?>/logout.php">
-          <i class="bi bi-box-arrow-right me-1"></i>Logout
-        </a>
-      </li>
-    </ul>
+ 
+<div id="wrapper">
+ 
+<?php include BASE_URL . '/includes/sidebar.php'; ?>
+ 
+<div id="content">
+ 
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="topbar-left">
+    <div class="topbar-page-title"><?= htmlspecialchars($halaman) ?></div>
+    <div class="topbar-breadcrumb">
+      <i class="bi bi-house-door me-1"></i>MediPharm
+      <span class="mx-1" style="color:#ccc">/</span>
+      <?= htmlspecialchars($halaman) ?>
+    </div>
   </div>
-</nav>
+  <div class="topbar-right">
+    <div class="topbar-search">
+      <i class="bi bi-search"></i>
+      <span>Cari data...</span>
+    </div>
+    <a href="#" class="topbar-icon-btn" title="Notifikasi">
+      <i class="bi bi-bell"></i>
+      <span class="notif-badge"></span>
+    </a>
+    <a href="<?= $base_url ?>/logout.php" class="topbar-icon-btn" title="Logout">
+      <i class="bi bi-box-arrow-right"></i>
+    </a>
+  </div>
+</div>
+<!-- /TOPBAR -->
+ 
 
-<!-- WRAPPER -->
-<div class="d-flex" id="wrapper">
+
