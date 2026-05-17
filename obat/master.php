@@ -6,7 +6,7 @@ session_start();
 if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
 // Query Master: Hanya ambil data unik per obat
-$sql = "SELECT id_obat, kode_obat, nama_obat, harga_beli, harga_jual FROM obat WHERE is_active = 1 ORDER BY id_obat DESC";
+$sql = "SELECT id_obat, kode_obat, nama_obat, harga_beli, harga_jual FROM obat WHERE is_active = 1 ORDER BY id_obat ASC";
 $master_list = db_fetch_all($conn, $sql);
 ?>
 <!DOCTYPE html>

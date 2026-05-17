@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 
 // Ambil semua data pelanggan aktif
-$sql = "SELECT * FROM pelanggan WHERE is_active = 1 ORDER BY nama_pelanggan ASC";
+$sql = "SELECT * FROM pelanggan WHERE is_active = 1 ORDER BY kode_pelanggan ASC";
 $data_pelanggan = db_fetch_all($conn, $sql);
 ?>
 
