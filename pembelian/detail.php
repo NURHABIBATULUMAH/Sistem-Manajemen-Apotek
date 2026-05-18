@@ -65,8 +65,8 @@ $items = db_fetch_all($conn, $sql_d, '', $id);
                             <?php foreach($items as $i): ?>
                             <tr>
                                 <td><?= $i['nama_obat'] ?></td>
-                                <td class="text-center"><?= $i['qty'] ?></td>
-                                <td class="text-end">Rp <?= number_format($i['harga_beli']) ?></td>
+                                <td class="text-center"><?= $i['qty_pesan'] ?></td>
+                                <td class="text-end">Rp <?= number_format($i['harga_satuan']) ?></td>
                                 <td class="text-end fw-bold">Rp <?= number_format($i['subtotal']) ?></td>
                                 <td class="text-center small"><?= $i['tgl_kadaluarsa']->format('d/m/Y') ?></td>
                             </tr>
