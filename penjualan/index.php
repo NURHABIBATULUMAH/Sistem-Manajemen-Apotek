@@ -25,7 +25,7 @@ $data = db_fetch_all($conn, $sql);
             <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Riwayat Transaksi Penjualan</h4>
             <p class="text-muted small mb-0">Daftar seluruh nota penjualan yang telah diterbitkan.</p>
         </div>
-        <a href="tambah.php" class="btn btn-primary rounded-3 shadow-sm px-4 fw-bold">
+        <a href="tambah.php" class="btn btn-success fw-bold">
             <i class="bi bi-plus-lg me-1"></i> Pesanan Baru
         </a>
     </div>

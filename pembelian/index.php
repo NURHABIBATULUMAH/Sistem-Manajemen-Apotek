@@ -78,9 +78,23 @@ $riwayat = db_fetch_all($conn, $sql);
                                             Rp <?= number_format($row['total_harga'], 0, ',', '.') ?>
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3">Selesai</span>
-                                    </td>
+                                    <!-- MODIFIKASI STATUS DINAMIS -->
+                                <td class="text-center">
+                                    <?php 
+                                    // Mengambil status dari db, jika kosong default ke 'SELESAI'
+                                    $status = strtoupper($row['status_pembelian'] ?? 'SELESAI'); 
+                                    
+                                    if ($status === 'SELESAI' || $status === 'LUNAS') {
+                                        echo '<span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Selesai</span>';
+                                    } else if ($status === 'PENDING' || $status === 'PROSES') {
+                                        echo '<span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Pending</span>';
+                                    } else if ($status === 'BATAL') {
+                                        echo '<span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Batal</span>';
+                                    } else {
+                                        echo '<span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">' . htmlspecialchars($status) . '</span>';
+                                    }
+                                    ?>
+                                </td>
                                     <td class="text-center">
                                         <div class="btn-group">
                                             <a href="detail.php?id=<?= $row['id_pembelian'] ?>" class="btn btn-sm btn-info text-white">

@@ -21,7 +21,7 @@ $data_pelanggan = db_fetch_all($conn, $sql);
             <h4 class="fw-bold mb-0">Manajemen Pelanggan</h4>
             <p class="text-muted small mb-0">Daftar pelanggan aktif di database.</p>
         </div>
-        <a href="tambah.php" class="btn btn-primary rounded-3 shadow-sm">
+        <a href="tambah.php" class="btn btn-success fw-bold">
             <i class="bi bi-plus-lg me-1"></i> Tambah Pelanggan
         </a>
     </div>
@@ -50,13 +50,24 @@ $data_pelanggan = db_fetch_all($conn, $sql);
                         </td>
                         <td class="fw-bold text-muted"><?= $p['kode_pelanggan'] ?></td>
                         <td class="fw-bold text-main"><?= htmlspecialchars($p['nama_pelanggan']) ?></td>
-                        <td><?= htmlspecialchars($p['no_hp'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($p['no_telepon']) ?></td>
                         <td>
-                            <span class="badge <?= $p['jenis_pelanggan'] == 'BPJS' ? 'badge-selesai' : 'bg-light text-dark' ?>">
-                                <?= $p['jenis_pelanggan'] ?>
-                            </span>
+                            <!-- MODIFIKASI KATEGORI: BPJS (Hijau/Biru) & UMUM (Abu-abu/Kuning) -->
+                            <?php 
+                            $jenis = strtoupper($p['jenis_pelanggan'] ?? '');
+                            if ($jenis === 'BPJS') {
+                                echo '<span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">BPJS</span>';
+                            } else if ($jenis === 'UMUM') {
+                                echo '<span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Umum</span>';
+                            } else {
+                                echo '<span class="badge bg-light text-dark px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">' . htmlspecialchars($jenis) . '</span>';
+                            }
+                            ?>
                         </td>
-                        <td><span class="badge badge-selesai">Aktif</span></td>
+                        <td>
+                            <!-- Status Aktif dengan Badge Modern -->
+                            <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Aktif</span>
+                        </td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-1">
                                 <a href="detail.php?id=<?= $p['id_pelanggan'] ?>" class="text-muted p-2" title="Liat Detail">

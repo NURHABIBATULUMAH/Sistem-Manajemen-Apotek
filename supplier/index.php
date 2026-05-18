@@ -13,7 +13,7 @@ $data = db_fetch_all($conn, $sql);
 <div class="container-fluid">
     <div class="page-header d-flex justify-content-between align-items-center mt-4">
         <h4><i class="bi bi-truck me-2 text-primary"></i>Data Supplier</h4>
-        <a href="tambah.php" class="btn btn-primary btn-sm">Tambah Supplier</a>
+        <a href="tambah.php" class="btn btn-success fw-bold">Tambah Supplier</a>
     </div>
 
     <div class="card mt-3">

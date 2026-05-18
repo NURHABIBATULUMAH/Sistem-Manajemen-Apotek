@@ -14,7 +14,7 @@ $data = db_fetch_all($conn, $sql);
 <div class="container-fluid">
     <div class="page-header d-flex justify-content-between align-items-center mt-4">
         <h4><i class="bi bi-file-medical me-2 text-info"></i>Antrean Resep Dokter</h4>
-        <a href="tambah.php" class="btn btn-info btn-sm text-white">Input Resep Baru</a>
+        <a href="tambah.php" class="btn btn-success fw-bold">Input Resep Baru</a>
     </div>
 
     <div class="card mt-3">

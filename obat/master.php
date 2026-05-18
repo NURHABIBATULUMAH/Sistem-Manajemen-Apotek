@@ -31,7 +31,7 @@ $master_list = db_fetch_all($conn, $sql);
                 <a href="index.php" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
                     <i class="bi bi-arrow-left me-1"></i> Lihat Stok
                 </a>
-                <a href="tambah.php" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <a href="tambah.php" class="btn btn-success fw-bold">
                     <i class="bi bi-plus-lg me-1"></i> Tambah Baru
                 </a>
             </div>
