@@ -11,7 +11,36 @@ if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
 // 1. DATA MASTER
 $pelanggan = db_fetch_all($conn, "SELECT id_pelanggan, nama_pelanggan, kode_pelanggan FROM pelanggan WHERE is_active = 1");
-$obat_list = db_fetch_all($conn, "SELECT id_obat, nama_obat, stok FROM obat WHERE is_active = 1");
+// KODE BARU (MENGHITUNG TOTAL STOK BATCH YANG BELUM KADALUARSA)
+// KODE BARU: Menghitung stok riil dari (Total Diterima di Pembelian) - (Total Terjual di Penjualan)
+// KODE YANG SUDAH DIPERBAIKI (Mencegah nilai NULL jika obat belum pernah terjual)
+$sql_obat_fefo = "
+    SELECT 
+        o.id_obat, 
+        o.nama_obat,
+        (
+            -- 1. Total Masuk dari Pembelian yang Diterima
+            ISNULL((
+                SELECT SUM(pd.qty_terima) 
+                FROM pembelian_detail pd
+                JOIN pembelian_header ph ON pd.id_pembelian = ph.id_pembelian
+                WHERE pd.id_obat = o.id_obat AND ph.status = 'diterima'
+            ), 0) 
+            - 
+            -- 2. Total Keluar dari Penjualan yang Selesai (Dibungkus ISNULL terluar)
+            ISNULL((
+                SELECT SUM(pjd.qty) 
+                FROM penjualan_detail pjd
+                JOIN penjualan_header pjh ON pjd.id_penjualan = pjh.id_penjualan
+                WHERE pjd.id_obat = o.id_obat AND pjh.status = 'selesai'
+            ), 0)
+        ) AS stok
+    FROM obat o
+    WHERE o.is_active = 1
+    ORDER BY o.kode_obat ASC
+";
+
+$obat_list = db_fetch_all($conn, $sql_obat_fefo);
 
 // 2. LOGIKA SIMPAN
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['items'])) {
