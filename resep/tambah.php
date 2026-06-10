@@ -14,30 +14,21 @@ $pelanggan = db_fetch_all($conn, "SELECT id_pelanggan, nama_pelanggan, kode_pela
 // KODE BARU (MENGHITUNG TOTAL STOK BATCH YANG BELUM KADALUARSA)
 // KODE BARU: Menghitung stok riil dari (Total Diterima di Pembelian) - (Total Terjual di Penjualan)
 // KODE YANG SUDAH DIPERBAIKI (Mencegah nilai NULL jika obat belum pernah terjual)
+// KODE YANG SUDAH DIPERBAIKI (Sinkron dengan FEFO Kasir & Anti Expired)
 $sql_obat_fefo = "
     SELECT 
         o.id_obat, 
         o.nama_obat,
         (
-            -- 1. Total Masuk dari Pembelian yang Diterima
-            ISNULL((
-                SELECT SUM(pd.qty_terima) 
-                FROM pembelian_detail pd
-                JOIN pembelian_header ph ON pd.id_pembelian = ph.id_pembelian
-                WHERE pd.id_obat = o.id_obat AND ph.status = 'diterima'
-            ), 0) 
-            - 
-            -- 2. Total Keluar dari Penjualan yang Selesai (Dibungkus ISNULL terluar)
-            ISNULL((
-                SELECT SUM(pjd.qty) 
-                FROM penjualan_detail pjd
-                JOIN penjualan_header pjh ON pjd.id_penjualan = pjh.id_penjualan
-                WHERE pjd.id_obat = o.id_obat AND pjh.status = 'selesai'
-            ), 0)
+            SELECT ISNULL(SUM(stok_sisa), 0) 
+            FROM pembelian_detail 
+            WHERE id_obat = o.id_obat 
+              AND stok_sisa > 0 
+              AND tgl_kadaluarsa >= CAST(GETDATE() AS DATE)
         ) AS stok
     FROM obat o
     WHERE o.is_active = 1
-    ORDER BY o.kode_obat ASC
+    ORDER BY o.nama_obat ASC
 ";
 
 $obat_list = db_fetch_all($conn, $sql_obat_fefo);

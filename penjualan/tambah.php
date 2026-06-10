@@ -10,10 +10,22 @@ session_start();
 // Cek Login
 if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
-// --- 1. AMBIL DATA MASTER OBAT (Mencari EXP Terdekat & Stok Real) ---
-$sql_obat = "SELECT o.id_obat, o.nama_obat, o.harga_jual, o.stok,
-             (SELECT MIN(tgl_kadaluarsa) FROM pembelian_detail WHERE id_obat = o.id_obat AND stok_sisa > 0) as exp_terdekat
-             FROM obat o WHERE o.is_active = 1";
+// --- 1. AMBIL DATA MASTER OBAT (Mencari EXP Terdekat & Stok Real yang AMAN) ---
+$sql_obat = "SELECT o.id_obat, o.nama_obat, o.harga_jual, 
+             -- Hitung HANYA stok yang belum kadaluarsa
+             (SELECT ISNULL(SUM(stok_sisa), 0) 
+              FROM pembelian_detail 
+              WHERE id_obat = o.id_obat 
+                AND stok_sisa > 0 
+                AND tgl_kadaluarsa >= CAST(GETDATE() AS DATE)) as stok,
+             -- Cari tanggal expired terdekat yang aman
+             (SELECT MIN(tgl_kadaluarsa)
+              FROM pembelian_detail
+              WHERE id_obat = o.id_obat 
+                AND stok_sisa > 0 
+                AND tgl_kadaluarsa >= CAST(GETDATE() AS DATE)) as exp_terdekat
+             FROM obat o 
+             WHERE o.is_active = 1";
 $obat_list = db_fetch_all($conn, $sql_obat);
 
 // --- 2. AMBIL DAFTAR RESEP YANG BERSTATUS 'DIPROSES' ---
@@ -27,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['items'])) {
     $bayar = (float)$_POST['uang_bayar'];
 
     if ($bayar < $total) {
-        echo "<script>alert('Maaf Dimas, uang bayarnya kurang!'); window.history.back();</script>";
+        echo "<script>alert('Maaf, uang bayarnya kurang!'); window.history.back();</script>";
         exit;
     }
 
@@ -51,8 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['items'])) {
             $qty = (int)$it['qty'];
             $hrg = (float)$it['harga'];
 
-            // B. LOGIKA FEFO: Kurangi stok per Batch Expired
-            $sql_fefo = "SELECT id_detail, stok_sisa FROM pembelian_detail WHERE id_obat = ? AND stok_sisa > 0 ORDER BY tgl_kadaluarsa ASC";
+            // B. LOGIKA FEFO KETAT: Hanya kurangi dari batch yang belum expired
+            $sql_fefo = "SELECT id_detail, stok_sisa FROM pembelian_detail 
+                         WHERE id_obat = ? 
+                           AND stok_sisa > 0 
+                           AND tgl_kadaluarsa >= CAST(GETDATE() AS DATE) 
+                         ORDER BY tgl_kadaluarsa ASC";
             $stmt_fefo = sqlsrv_query($conn, $sql_fefo, [$ido]);
             $sisa_potong = $qty;
 
@@ -184,7 +200,7 @@ function addRow(id='', q=1, h=0) {
                             data-h="${o.harga_jual}" 
                             data-stok="${o.stok}" 
                             ${o.id_obat==id?'selected':''}>
-                        ${o.nama_obat} (${o.exp_terdekat ? o.exp_terdekat.date.substring(0,10) : 'No Exp'}) - Sisa: ${o.stok}
+                        ${o.nama_obat} (${o.exp_terdekat ? o.exp_terdekat.date.substring(0,10) : 'No Exp'}) - Sisa Aman: ${o.stok}
                     </option>`).join('')}
             </select>
         </td>
