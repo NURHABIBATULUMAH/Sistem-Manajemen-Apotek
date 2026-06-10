@@ -82,7 +82,7 @@ $riwayat = db_fetch_all($conn, $sql);
                                 <td class="text-center">
                                     <?php 
                                     // Mengambil status dari db, jika kosong default ke 'SELESAI'
-                                    $status = strtoupper($row['status_pembelian'] ?? 'SELESAI'); 
+                                    $status = strtoupper($row['status'] ?? 'SELESAI'); 
                                     
                                     if ($status === 'SELESAI' || $status === 'LUNAS') {
                                         echo '<span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Selesai</span>';

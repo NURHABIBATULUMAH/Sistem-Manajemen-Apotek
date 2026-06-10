@@ -46,11 +46,11 @@ $data_pelanggan = db_fetch_all($conn, $sql);
                     <tr>
                         <td class="ps-4"><?= $no++ ?></td>
                         <td>
-                            <img src="<?= BASE_URL ?>/assets/img/profiles/<?= $p['foto'] ?? 'default_pelanggan.png' ?>" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                            <img src="<?= BASE_URL ?>/assets/img/profiles/default_pelanggan.png" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
                         </td>
                         <td class="fw-bold text-muted"><?= $p['kode_pelanggan'] ?></td>
                         <td class="fw-bold text-main"><?= htmlspecialchars($p['nama_pelanggan']) ?></td>
-                        <td><?= htmlspecialchars($p['no_telepon']) ?></td>
+                        <td><?= htmlspecialchars($p['no_telepon'] ?? '-') ?></td>
                         <td>
                             <!-- MODIFIKASI KATEGORI: BPJS (Hijau/Biru) & UMUM (Abu-abu/Kuning) -->
                             <?php 
