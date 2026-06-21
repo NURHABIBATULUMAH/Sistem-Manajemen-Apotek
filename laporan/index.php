@@ -3,6 +3,8 @@ define('BASE_URL', '..');
 require_once __DIR__ . '/../config/database.php';
 session_start();
 
+if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
+
 $halaman = 'Laporan Penjualan';
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
@@ -11,41 +13,29 @@ require_once __DIR__ . '/../includes/sidebar.php';
 $tgl_mulai  = $_GET['tgl_mulai'] ?? date('Y-m-d');
 $tgl_sampai = $_GET['tgl_sampai'] ?? date('Y-m-d');
 
-// 2. Query Sakti JOIN 3 Tabel untuk Laporan Detail
-$sql = "SELECT 
-            h.no_penjualan, 
-            h.tgl_transaksi, 
-            p.nama_pelanggan, 
-            o.nama_obat, 
-            d.qty, 
-            d.harga_satuan, 
-            d.subtotal,
-            pt.nama_petugas
-        FROM penjualan_header h
-        JOIN penjualan_detail d ON h.id_penjualan = d.id_penjualan
-        JOIN obat o ON d.id_obat = o.id_obat
-        JOIN petugas pt ON h.id_petugas = pt.id_petugas
-        LEFT JOIN pelanggan p ON h.id_pelanggan = p.id_pelanggan
-        WHERE CAST(h.tgl_transaksi AS DATE) BETWEEN ? AND ?
-        ORDER BY h.tgl_transaksi DESC";
+// 2. Query Menembak Database VIEW Rekap Penjualan Harian
+$sql = "SELECT tanggal, jumlah_transaksi, total_pendapatan, total_diskon, rata_rata_transaksi, metode_bayar, nama_petugas 
+        FROM vw_penjualan_harian
+        WHERE tanggal BETWEEN ? AND ?
+        ORDER BY tanggal DESC, nama_petugas ASC";
 
 $params = array($tgl_mulai, $tgl_sampai);
 $laporan = db_fetch_all($conn, $sql, '', ...$params);
 
-// Hitung Total Pendapatan di Periode Tersebut
+// Hitung Grand Total Pendapatan di Periode Tersebut
 $grand_total = 0;
 foreach ($laporan as $row) {
-    $grand_total += $row['subtotal'];
+    $grand_total += (float)$row['total_pendapatan'];
 }
 ?>
 
 <div class="container-fluid">
-    <div class="page-header mt-4">
-        <h4><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Laporan Penjualan Detail</h4>
-        <p class="text-muted">Memantau daftar obat yang terjual dalam periode tertentu.</p>
+    <div class="page-header mt-4 no-print">
+        <h4><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Rekap Penjualan Harian (Database View)</h4>
+        <p class="text-muted">Memantau ringkasan omzet transaksi apotek berdasarkan data View ter-compile.</p>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 no-print">
         <div class="card-body">
             <form method="GET" class="row g-3 align-items-end">
                 <div class="col-md-3">
@@ -71,52 +61,52 @@ foreach ($laporan as $row) {
     </div>
 
     <div class="card shadow-sm">
-        <div class="card-header bg-white py-3">
-            <span class="fw-bold">Data Penjualan: <?= date('d/m/Y', strtotime($tgl_mulai)) ?> - <?= date('d/m/Y', strtotime($tgl_sampai)) ?></span>
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Periode Laporan: <?= date('d/m/Y', strtotime($tgl_mulai)) ?> - <?= date('d/m/Y', strtotime($tgl_sampai)) ?></span>
+            <span class="badge bg-primary no-print">Source: vw_penjualan_harian</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-dark">
                         <tr>
-                            <th>Tgl & No. Nota</th>
-                            <th>Pelanggan</th>
-                            <th>Nama Obat</th>
-                            <th class="text-center">Qty</th>
-                            <th class="text-end">Harga Satuan</th>
-                            <th class="text-end">Subtotal</th>
-                            <th>Kasir</th>
+                            <th class="ps-4">Tanggal</th>
+                            <th>Kasir / Petugas</th>
+                            <th class="text-center">Metode Bayar</th>
+                            <th class="text-center">Jumlah Transaksi</th>
+                            <th class="text-end">Total Diskon</th>
+                            <th class="text-end">Rata-rata / Transaksi</th>
+                            <th class="text-end pe-4">Total Pendapatan</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($laporan)): ?>
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">Tidak ada transaksi pada periode ini.</td>
+                                <td colspan="7" class="text-center py-5 text-muted">Tidak ada data transaksi ringkasan pada periode ini.</td>
                             </tr>
                         <?php else: ?>
-                            <?php foreach ($laporan as $l): ?>
+                            <?php foreach ($laporan as $l): 
+                                // Handling format tanggal dari SQL Server
+                                $tgl_obj = ($l['tanggal'] instanceof DateTime) ? $l['tanggal'] : new DateTime($l['tanggal']);
+                            ?>
                                 <tr>
-                                    <td>
-                                        <div class="fw-bold"><?= $l['no_penjualan'] ?></div>
-                                        <small class="text-muted"><?= $l['tgl_transaksi']->format('d/m/Y H:i') ?></small>
-                                    </td>
-                                    <td><?= $l['nama_pelanggan'] ?? '<span class="text-muted">Umum</span>' ?></td>
-                                    <td><?= $l['nama_obat'] ?></td>
-                                    <td class="text-center"><?= $l['qty'] ?></td>
-                                    <td class="text-end">Rp <?= number_format($l['harga_satuan'], 0, ',', '.') ?></td>
-                                    <td class="text-end fw-bold text-primary">Rp <?= number_format($l['subtotal'], 0, ',', '.') ?></td>
-                                    <td><small><?= $l['nama_petugas'] ?></small></td>
+                                    <td class="ps-4 fw-bold"><?= $tgl_obj->format('d M Y') ?></td>
+                                    <td><?= $l['nama_petugas'] ?></td>
+                                    <td class="text-center"><span class="badge bg-secondary-subtle text-secondary text-uppercase"><?= $l['metode_bayar'] ?></span></td>
+                                    <td class="text-center fw-bold"><?= $l['jumlah_transaksi'] ?></td>
+                                    <td class="text-end text-muted">Rp <?= number_format($l['total_diskon'], 0, ',', '.') ?></td>
+                                    <td class="text-end">Rp <?= number_format($l['rata_rata_transaksi'], 0, ',', '.') ?></td>
+                                    <td class="text-end fw-bold text-primary pe-4">Rp <?= number_format($l['total_pendapatan'], 0, ',', '.') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="5" class="text-end fw-bold py-3">TOTAL PENDAPATAN :</td>
-                            <td class="text-end fw-bold text-success py-3" style="font-size: 1.1rem;">
+                            <td colspan="6" class="text-end fw-bold py-3">TOTAL OMZET PERIODE :</td>
+                            <td class="text-end fw-bold text-success py-3 pe-4" style="font-size: 1.1rem;">
                                 Rp <?= number_format($grand_total, 0, ',', '.') ?>
                             </td>
-                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -127,10 +117,11 @@ foreach ($laporan as $row) {
 
 <style>
 @media print {
-    .no-print, .btn, form, .sidebar, .header { display: none !important; }
-    .container-fluid { width: 100%; margin: 0; padding: 0; }
+    .no-print, .btn, form, .sidebar, #header, header, .navbar { display: none !important; }
+    #content { margin-left: 0 !important; padding: 0 !important; width: 100% !important; }
+    .container-fluid { width: 100% !important; margin: 0 !important; padding: 0 !important; }
     .card { border: none !important; box-shadow: none !important; }
-    .table-dark { background-color: #fff !important; color: #000 !important; }
+    .table-dark { background-color: #343a40 !important; color: #fff !important; }
 }
 </style>
 
