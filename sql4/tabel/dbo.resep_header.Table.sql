@@ -22,3 +22,24 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
+ALTER TABLE [dbo].[resep_header] ADD UNIQUE NONCLUSTERED 
+(
+	[no_resep] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[resep_header] ADD  DEFAULT ('menunggu') FOR [status]
+GO
+ALTER TABLE [dbo].[resep_header] ADD  DEFAULT (getdate()) FOR [created_at]
+GO
+ALTER TABLE [dbo].[resep_header]  WITH CHECK ADD  CONSTRAINT [fk_rh_pelanggan] FOREIGN KEY([id_pelanggan])
+REFERENCES [dbo].[pelanggan] ([id_pelanggan])
+GO
+ALTER TABLE [dbo].[resep_header] CHECK CONSTRAINT [fk_rh_pelanggan]
+GO
+ALTER TABLE [dbo].[resep_header]  WITH CHECK ADD  CONSTRAINT [fk_rh_petugas] FOREIGN KEY([id_petugas])
+REFERENCES [dbo].[petugas] ([id_petugas])
+GO
+ALTER TABLE [dbo].[resep_header] CHECK CONSTRAINT [fk_rh_petugas]
+GO
+ALTER TABLE [dbo].[resep_header]  WITH CHECK ADD CHECK  (([status]='dibatalkan' OR [status]='selesai' OR [status]='diproses' OR [status]='menunggu'))
+GO

@@ -12,8 +12,8 @@ $q_expense   = db_fetch_one($conn, "SELECT SUM(total_harga) as total FROM pembel
 $earnings    = ($q_income['total'] ?? 0) - ($q_expense['total'] ?? 0);
 
 // --- 2. DATA INVENTORY (RIIL) ---
-$q_low_stock = db_fetch_one($conn, "SELECT COUNT(*) as total FROM obat WHERE stok <= 5 AND is_active = 1");
-$q_expiry    = db_fetch_one($conn, "SELECT COUNT(*) as total FROM pembelian_detail WHERE stok_sisa > 0 AND DATEDIFF(day, GETDATE(), tgl_kadaluarsa) < 90");
+$q_low_stock = db_fetch_one($conn, "SELECT COUNT(*) as total FROM vw_stok_menipis");
+$q_expiry    = db_fetch_one($conn, "SELECT COUNT(*) as total FROM vw_obat_kadaluarsa");
 // New Arrivals: Obat yang baru ditambah (misal 10 ID terakhir)
 $q_new_items = db_fetch_one($conn, "SELECT COUNT(*) as total FROM obat WHERE is_active = 1 AND id_obat > (SELECT MAX(id_obat) - 10 FROM obat)");
 

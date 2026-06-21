@@ -20,3 +20,29 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
+SET IDENTITY_INSERT [dbo].[kategori] ON 
+
+INSERT [dbo].[kategori] ([id_kategori], [kode_kategori], [nama_kategori], [deskripsi], [jenis_obat], [is_active], [created_at]) VALUES (1, N'KAT001', N'Analgesik', N'Obat pereda nyeri dan demam', N'bebas', 1, CAST(N'2026-05-16T17:28:18.527' AS DateTime))
+INSERT [dbo].[kategori] ([id_kategori], [kode_kategori], [nama_kategori], [deskripsi], [jenis_obat], [is_active], [created_at]) VALUES (2, N'KAT002', N'Antibiotik', N'Obat melawan infeksi bakteri', N'keras', 1, CAST(N'2026-05-16T17:28:18.527' AS DateTime))
+INSERT [dbo].[kategori] ([id_kategori], [kode_kategori], [nama_kategori], [deskripsi], [jenis_obat], [is_active], [created_at]) VALUES (3, N'KAT003', N'Vitamin', N'Suplemen vitamin dan mineral', N'bebas', 1, CAST(N'2026-05-16T17:28:18.527' AS DateTime))
+INSERT [dbo].[kategori] ([id_kategori], [kode_kategori], [nama_kategori], [deskripsi], [jenis_obat], [is_active], [created_at]) VALUES (4, N'KAT004', N'Antasida', N'Obat gangguan lambung dan maag', N'bebas', 1, CAST(N'2026-05-16T17:28:18.527' AS DateTime))
+INSERT [dbo].[kategori] ([id_kategori], [kode_kategori], [nama_kategori], [deskripsi], [jenis_obat], [is_active], [created_at]) VALUES (5, N'KAT005', N'Antihipertensi', N'Obat tekanan darah tinggi', N'keras', 1, CAST(N'2026-05-16T17:28:18.527' AS DateTime))
+SET IDENTITY_INSERT [dbo].[kategori] OFF
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UQ__kategori__6B23B369C28EA643]    Script Date: 5/17/2026 1:39:38 AM ******/
+ALTER TABLE [dbo].[kategori] ADD UNIQUE NONCLUSTERED 
+(
+	[kode_kategori] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[kategori] ADD  DEFAULT ('bebas') FOR [jenis_obat]
+GO
+ALTER TABLE [dbo].[kategori] ADD  DEFAULT ((1)) FOR [is_active]
+GO
+ALTER TABLE [dbo].[kategori] ADD  DEFAULT (getdate()) FOR [created_at]
+GO
+ALTER TABLE [dbo].[kategori]  WITH CHECK ADD CHECK  (([jenis_obat]='psikotropika' OR [jenis_obat]='narkotika' OR [jenis_obat]='keras' OR [jenis_obat]='bebas_terbatas' OR [jenis_obat]='bebas'))
+GO
+

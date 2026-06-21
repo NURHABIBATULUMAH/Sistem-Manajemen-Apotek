@@ -20,3 +20,17 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
+SET IDENTITY_INSERT [dbo].[resep_detail] OFF
+GO
+ALTER TABLE [dbo].[resep_detail] ADD  DEFAULT ((1)) FOR [qty]
+GO
+ALTER TABLE [dbo].[resep_detail]  WITH CHECK ADD  CONSTRAINT [fk_rd_obat] FOREIGN KEY([id_obat])
+REFERENCES [dbo].[obat] ([id_obat])
+GO
+ALTER TABLE [dbo].[resep_detail] CHECK CONSTRAINT [fk_rd_obat]
+GO
+ALTER TABLE [dbo].[resep_detail]  WITH CHECK ADD  CONSTRAINT [fk_rd_resep] FOREIGN KEY([id_resep])
+REFERENCES [dbo].[resep_header] ([id_resep])
+GO
+ALTER TABLE [dbo].[resep_detail] CHECK CONSTRAINT [fk_rd_resep]
+GO

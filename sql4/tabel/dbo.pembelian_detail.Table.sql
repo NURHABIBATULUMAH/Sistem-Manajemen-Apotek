@@ -23,3 +23,26 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
+SET IDENTITY_INSERT [dbo].[pembelian_detail] OFF
+GO
+ALTER TABLE [dbo].[pembelian_detail] ADD  DEFAULT ((0)) FOR [qty_pesan]
+GO
+ALTER TABLE [dbo].[pembelian_detail] ADD  DEFAULT ((0)) FOR [qty_terima]
+GO
+ALTER TABLE [dbo].[pembelian_detail] ADD  DEFAULT ((0)) FOR [harga_satuan]
+GO
+ALTER TABLE [dbo].[pembelian_detail] ADD  DEFAULT ((0)) FOR [subtotal]
+GO
+ALTER TABLE [dbo].[pembelian_detail] ADD  DEFAULT ((0)) FOR [stok_sisa]
+GO
+ALTER TABLE [dbo].[pembelian_detail]  WITH CHECK ADD  CONSTRAINT [fk_pd_obat] FOREIGN KEY([id_obat])
+REFERENCES [dbo].[obat] ([id_obat])
+GO
+ALTER TABLE [dbo].[pembelian_detail] CHECK CONSTRAINT [fk_pd_obat]
+GO
+ALTER TABLE [dbo].[pembelian_detail]  WITH CHECK ADD  CONSTRAINT [fk_pd_pembelian] FOREIGN KEY([id_pembelian])
+REFERENCES [dbo].[pembelian_header] ([id_pembelian])
+GO
+ALTER TABLE [dbo].[pembelian_detail] CHECK CONSTRAINT [fk_pd_pembelian]
+GO
+

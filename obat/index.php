@@ -5,13 +5,25 @@ session_start();
 
 if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
-// Query Monitoring Stok: Menggunakan nama kolom rill (stok_sisa, harga_satuan)
-$sql = "SELECT o.nama_obat, pd.tgl_kadaluarsa, pd.stok_sisa, pd.harga_satuan, 
-        DATEDIFF(day, GETDATE(), pd.tgl_kadaluarsa) as sisa_hari
+// --- QUERY PERBAIKAN: Menghitung status langsung dari tanggal batch riil ---
+$sql = "SELECT 
+            o.nama_obat, 
+            pd.tgl_kadaluarsa, 
+            pd.stok_sisa, 
+            pd.harga_satuan, 
+            DATEDIFF(day, CAST(GETDATE() AS DATE), pd.tgl_kadaluarsa) as sisa_hari,
+            -- Logika disesuaikan persis dengan aturan bisnis di View Anda
+            CASE
+                WHEN pd.tgl_kadaluarsa < CAST(GETDATE() AS DATE) THEN 'Kadaluarsa'
+                WHEN DATEDIFF(day, CAST(GETDATE() AS DATE), pd.tgl_kadaluarsa) <= 30 THEN 'Kritis'
+                WHEN DATEDIFF(day, CAST(GETDATE() AS DATE), pd.tgl_kadaluarsa) <= 90 THEN 'Perhatian'
+                ELSE 'Aman'
+            END AS status_stok
         FROM pembelian_detail pd 
         LEFT JOIN obat o ON pd.id_obat = o.id_obat 
         WHERE pd.stok_sisa > 0 
         ORDER BY pd.tgl_kadaluarsa ASC";
+
 $stok_list = db_fetch_all($conn, $sql);
 ?>
 <!DOCTYPE html>
@@ -26,7 +38,7 @@ $stok_list = db_fetch_all($conn, $sql);
 <body>
 <?php include '../includes/sidebar.php'; ?>
 <div id="content">
-    <div class="container-fluid">
+    <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-0">Monitoring Stok (FEFO)</h4>
@@ -37,10 +49,10 @@ $stok_list = db_fetch_all($conn, $sql);
             </a>
         </div>
 
-        <div class="card-custom shadow-sm border-0 overflow-hidden bg-white">
+        <div class="card shadow-sm border-0 overflow-hidden bg-white" style="border-radius: 15px;">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
+                    <thead class="table-light">
                         <tr class="small text-muted text-uppercase">
                             <th class="ps-4 py-3">Nama Obat</th>
                             <th>Kadaluarsa</th>
@@ -53,20 +65,36 @@ $stok_list = db_fetch_all($conn, $sql);
                         <?php if(empty($stok_list)): ?>
                             <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada stok aktif di gudang.</td></tr>
                         <?php else: ?>
-                            <?php foreach ($stok_list as $s): ?>
+                            <?php foreach ($stok_list as $s): 
+                                // Penyesuaian warna badge berdasarkan string output dari View Anda
+                                switch ($s['status_stok']) {
+                                    case 'Kadaluarsa':
+                                        $badge_class = 'bg-danger text-white';
+                                        break;
+                                    case 'Kritis':
+                                        $badge_class = 'bg-danger-subtle text-danger';
+                                        break;
+                                    case 'Perhatian':
+                                        $badge_class = 'bg-warning-subtle text-warning-emphasis';
+                                        break;
+                                    default: // 'Aman'
+                                        $badge_class = 'bg-success-subtle text-success';
+                                        break;
+                                }
+                                
+                                // Amankan format tanggal (jika dari SQL Server berupa objek DateTime)
+                                $tgl_exp = is_string($s['tgl_kadaluarsa']) ? date('d M Y', strtotime($s['tgl_kadaluarsa'])) : $s['tgl_kadaluarsa']->format('d M Y');
+                            ?>
                             <tr>
-                                <td class="ps-4 fw-bold"><?= $s['nama_obat'] ?></td>
-                                <td><i class="bi bi-calendar3 me-2"></i><?= $s['tgl_kadaluarsa']->format('d M Y') ?></td>
-                                <td class="text-center fw-bold text-primary"><?= $s['stok_sisa'] ?></td>
+                                <td class="ps-4 fw-semibold text-dark"><?= htmlspecialchars($s['nama_obat']) ?></td>
+                                <td><i class="bi bi-calendar3 me-2 text-secondary"></i><?= $tgl_exp ?></td>
+                                <td class="text-center fw-bold text-primary"><?= number_format($s['stok_sisa']) ?></td>
                                 <td>Rp <?= number_format($s['harga_satuan'], 0, ',', '.') ?></td>
                                 <td class="text-center">
-                                    <?php if($s['sisa_hari'] < 0): ?>
-                                        <span class="badge bg-danger rounded-pill px-3">Expired</span>
-                                    <?php elseif($s['sisa_hari'] < 90): ?>
-                                        <span class="badge bg-warning text-dark rounded-pill px-3">Dekat Exp (<?= $s['sisa_hari'] ?> hari)</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-success-subtle text-success rounded-pill px-3">Aman</span>
-                                    <?php endif; ?>
+                                    <span class="badge <?= $badge_class ?> rounded-pill px-3 py-2 fw-bold small">
+                                        <?= htmlspecialchars($s['status_stok']) ?> 
+                                        <small class="d-block fw-normal" style="font-size: 0.75rem;">(<?= $s['sisa_hari'] ?> Hari)</small>
+                                    </span>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

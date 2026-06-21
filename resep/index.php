@@ -35,7 +35,19 @@ $data = db_fetch_all($conn, $sql);
                         <td class="fw-bold"><?= $r['no_resep'] ?></td>
                         <td><?= $r['nama_pelanggan'] ?></td>
                         <td><?= $r['nama_dokter'] ?></td>
-                        <td><span class="badge badge-<?= $r['status'] ?>"><?= ucfirst($r['status']) ?></span></td>
+                        <td class="text-center">
+                            <?php 
+                            $status = strtolower($r['status'] ?? 'pending');
+                            
+                            if ($status === 'pending' || $status === 'antri' || $status === 'proses') {
+                                echo '<span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Antrean</span>';
+                            } else if ($status === 'selesai' || $status === 'diambil') {
+                                echo '<span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Selesai</span>';
+                            } else {
+                                echo '<span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">' . ucfirst(htmlspecialchars($status)) . '</span>';
+                            }
+                            ?>
+                        </td>
                         <td class="text-center">
                             <a href="proses.php?id=<?= $r['id_resep'] ?>" class="btn btn-sm btn-primary">Layani Resep</a>
                         </td>

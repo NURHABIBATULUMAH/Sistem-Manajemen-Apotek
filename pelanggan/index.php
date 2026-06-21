@@ -32,7 +32,7 @@ $data_pelanggan = db_fetch_all($conn, $sql);
                 <thead>
                     <tr class="text-muted">
                         <th class="ps-4">No.</th>
-                        <th>Foto</th>
+                        <!-- <th>Foto</th> -->
                         <th>Kode/ID</th>
                         <th>Nama Pelanggan</th>
                         <th>No HP/Tlp</th>
@@ -45,9 +45,7 @@ $data_pelanggan = db_fetch_all($conn, $sql);
                     <?php if ($data_pelanggan): $no = 1; foreach ($data_pelanggan as $p): ?>
                     <tr>
                         <td class="ps-4"><?= $no++ ?></td>
-                        <td>
-                            <img src="<?= BASE_URL ?>/assets/img/profiles/default_pelanggan.png" class="rounded-circle" width="40" height="40" style="object-fit: cover;">
-                        </td>
+                       
                         <td class="fw-bold text-muted"><?= $p['kode_pelanggan'] ?></td>
                         <td class="fw-bold text-main"><?= htmlspecialchars($p['nama_pelanggan']) ?></td>
                         <td><?= htmlspecialchars($p['no_telepon'] ?? '-') ?></td>
