@@ -5,14 +5,13 @@ session_start();
 
 if (!isset($_SESSION['petugas'])) { header('Location: ../login.php'); exit; }
 
-// --- QUERY PERBAIKAN: Menghitung status langsung dari tanggal batch riil ---
+// --- QUERY PERBAIKAN: Menggabungkan stok dengan GROUP BY dan SUM ---
 $sql = "SELECT 
             o.nama_obat, 
             pd.tgl_kadaluarsa, 
-            pd.stok_sisa, 
-            pd.harga_satuan, 
+            SUM(pd.stok_sisa) AS stok_sisa,       -- Menjumlahkan stok dari baris yang sama
+            MAX(pd.harga_satuan) AS harga_satuan, -- Mengambil harga jika ada selisih di pembelian beda waktu
             DATEDIFF(day, CAST(GETDATE() AS DATE), pd.tgl_kadaluarsa) as sisa_hari,
-            -- Logika disesuaikan persis dengan aturan bisnis di View Anda
             CASE
                 WHEN pd.tgl_kadaluarsa < CAST(GETDATE() AS DATE) THEN 'Kadaluarsa'
                 WHEN DATEDIFF(day, CAST(GETDATE() AS DATE), pd.tgl_kadaluarsa) <= 30 THEN 'Kritis'
@@ -22,6 +21,9 @@ $sql = "SELECT
         FROM pembelian_detail pd 
         LEFT JOIN obat o ON pd.id_obat = o.id_obat 
         WHERE pd.stok_sisa > 0 
+        GROUP BY 
+            o.nama_obat,            -- Kelompokkan berdasarkan Nama Obat
+            pd.tgl_kadaluarsa       -- Kelompokkan berdasarkan Tanggal Expired
         ORDER BY pd.tgl_kadaluarsa ASC";
 
 $stok_list = db_fetch_all($conn, $sql);
@@ -57,7 +59,7 @@ $stok_list = db_fetch_all($conn, $sql);
                             <th class="ps-4 py-3">Nama Obat</th>
                             <th>Kadaluarsa</th>
                             <th class="text-center">Sisa Stok</th>
-                            <th>Harga Beli</th>
+                            <th>Harga Beli (Max)</th>
                             <th class="text-center">Status</th>
                         </tr>
                     </thead>
@@ -66,7 +68,7 @@ $stok_list = db_fetch_all($conn, $sql);
                             <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada stok aktif di gudang.</td></tr>
                         <?php else: ?>
                             <?php foreach ($stok_list as $s): 
-                                // Penyesuaian warna badge berdasarkan string output dari View Anda
+                                // Penyesuaian warna badge berdasarkan string output
                                 switch ($s['status_stok']) {
                                     case 'Kadaluarsa':
                                         $badge_class = 'bg-danger text-white';
@@ -93,7 +95,9 @@ $stok_list = db_fetch_all($conn, $sql);
                                 <td class="text-center">
                                     <span class="badge <?= $badge_class ?> rounded-pill px-3 py-2 fw-bold small">
                                         <?= htmlspecialchars($s['status_stok']) ?> 
-                                        <small class="d-block fw-normal" style="font-size: 0.75rem;">(<?= $s['sisa_hari'] ?> Hari)</small>
+                                        <small class="d-block fw-normal" style="font-size: 0.75rem;">
+                                            <?= ($s['sisa_hari'] < 0) ? 'Sudah lewat ' . abs($s['sisa_hari']) . ' Hari' : $s['sisa_hari'] . ' Hari Lagi' ?>
+                                        </small>
                                     </span>
                                 </td>
                             </tr>
