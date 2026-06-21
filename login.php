@@ -17,7 +17,7 @@ session_start();
         );
 
         // Verifikasi password dengan MD5 PHP
-        if ($row && $row['password_hash'] === md5($password)) {
+         if ($row && password_verify($password, $row['password_hash'])) {
             $_SESSION['petugas'] = [
                 'id_petugas'   => $row['id_petugas'],
                 'nama_petugas' => $row['nama_petugas'],
