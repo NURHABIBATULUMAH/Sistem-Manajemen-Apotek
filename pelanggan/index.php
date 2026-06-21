@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// pelanggan/index.php - Daftar Pelanggan Modern (Persis Gambar)
+// pelanggan/index.php - Daftar Pelanggan
 // ============================================================
 
 define('BASE_URL', '..'); 
@@ -50,7 +50,6 @@ $data_pelanggan = db_fetch_all($conn, $sql);
                         <td class="fw-bold text-main"><?= htmlspecialchars($p['nama_pelanggan']) ?></td>
                         <td><?= htmlspecialchars($p['no_telepon'] ?? '-') ?></td>
                         <td>
-                            <!-- MODIFIKASI KATEGORI: BPJS (Hijau/Biru) & UMUM (Abu-abu/Kuning) -->
                             <?php 
                             $jenis = strtoupper($p['jenis_pelanggan'] ?? '');
                             if ($jenis === 'BPJS') {
@@ -63,7 +62,6 @@ $data_pelanggan = db_fetch_all($conn, $sql);
                             ?>
                         </td>
                         <td>
-                            <!-- Status Aktif dengan Badge Modern -->
                             <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">Aktif</span>
                         </td>
                         <td class="text-center">

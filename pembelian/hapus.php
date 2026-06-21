@@ -4,7 +4,7 @@ session_start();
 
 $id = $_GET['id'] ?? die("ID tidak ditemukan");
 
-// 1. Ambil data detail untuk mengurangi kembali stok obat (Opsional tapi penting)
+// 1. Ambil data detail untuk mengurangi kembali stok obat 
 $sql_items = "SELECT id_obat, qty FROM pembelian_detail WHERE id_pembelian = ?";
 $items = db_fetch_all($conn, $sql_items, '', $id);
 

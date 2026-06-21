@@ -20,8 +20,7 @@ if (!$conn) {
     ]));
 }
 
-// --- HELPER FUNCTIONS (Nama fungsi tetap sama agar UI Habibah tidak error) ---
-
+// --- HELPER FUNCTIONS 
 function db_fetch_all($conn, string $sql, $types = '', ...$params): array {
     $stmt = sqlsrv_query($conn, $sql, $params);
     if ($stmt === false) return [];

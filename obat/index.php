@@ -22,8 +22,8 @@ $sql = "SELECT
         LEFT JOIN obat o ON pd.id_obat = o.id_obat 
         WHERE pd.stok_sisa > 0 
         GROUP BY 
-            o.nama_obat,            -- Kelompokkan berdasarkan Nama Obat
-            pd.tgl_kadaluarsa       -- Kelompokkan berdasarkan Tanggal Expired
+            o.nama_obat,           
+            pd.tgl_kadaluarsa       
         ORDER BY pd.tgl_kadaluarsa ASC";
 
 $stok_list = db_fetch_all($conn, $sql);

@@ -8,7 +8,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tgl_pesan    = $_POST['tgl_pesan']; 
     $id_ptg       = $_SESSION['petugas']['id_petugas'] ?? 1;
 
-    // --- LOGIKA BARU: HITUNG TOTAL SEMUA OBAT ---
     $grand_total = 0;
     foreach ($_POST['items'] as $it) {
         $grand_total += (int)$it['qty'] * (float)$it['harga_beli'];
@@ -34,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $qty = (int)$it['qty'];
             $hrg = (float)$it['harga_beli'];
             $exp = $it['tgl_kadaluarsa'];
-            $sub = $qty * $hrg; // Ini kalkulasi Rp 150.000 yang kamu maksud
+            $sub = $qty * $hrg; 
 
             // Simpan detail
             $sql_d = "INSERT INTO pembelian_detail (id_pembelian, id_obat, qty, harga_beli, subtotal, tgl_kadaluarsa, stok_sisa) 

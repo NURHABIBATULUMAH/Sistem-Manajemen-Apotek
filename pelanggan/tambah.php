@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// pelanggan/tambah.php - Tambah Pelanggan Baru (sesuai ERD)
+// pelanggan/tambah.php - Tambah Pelanggan Baru
 // ============================================================
 
 define('BASE_URL', '..'); 
@@ -10,7 +10,6 @@ $halaman = 'Tambah Pelanggan';
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 
-// --- GENERATE KODE PELANGGAN OTOMATIS ---
 $query_count = db_fetch_one($conn, "SELECT COUNT(*) AS total FROM pelanggan");
 $next_id     = ($query_count['total'] ?? 0) + 1;
 $kode_auto   = "PLG-" . str_pad($next_id, 3, "0", STR_PAD_LEFT);

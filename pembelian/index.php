@@ -12,7 +12,6 @@ require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 
 // Query untuk mengambil semua riwayat pembelian
-// Kita join ke tabel supplier agar muncul nama PT-nya, bukan cuma ID
 $sql = "SELECT h.*, s.nama_supplier 
         FROM pembelian_header h 
         JOIN supplier s ON h.id_supplier = s.id_supplier 

@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// pelanggan/detail.php - Profil & Riwayat Pelanggan (sesuai ERD)
+// pelanggan/detail.php - Profil & Riwayat Pelanggan 
 // ============================================================
 
 define('BASE_URL', '..'); 
