@@ -54,10 +54,7 @@ $q_pelanggan = db_fetch_one($conn, "SELECT COUNT(DISTINCT id_pelanggan) as total
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold m-0 text-dark">Dashboard</h3>
             <div class="d-flex gap-3">
-                <div class="input-group shadow-sm rounded-pill overflow-hidden">
-                    <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control border-0" placeholder="Cari data..." style="width: 200px;">
-                </div>
+                
                 <div class="bg-white px-3 py-2 rounded-pill shadow-sm small fw-bold">
                     <i class="bi bi-calendar-range me-2 text-success"></i> 01/01/2026 - 12/31/2026
                 </div>
@@ -92,15 +89,7 @@ $q_pelanggan = db_fetch_one($conn, "SELECT COUNT(DISTINCT id_pelanggan) as total
                     </div>
                 </div>
 
-                <div class="card-modern bg-white p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h6 class="fw-bold m-0">Ringkasan Aktivitas Terakhir</h6>
-                        <a href="#" class="text-success small fw-bold text-decoration-none">Lihat Semua</a>
-                    </div>
-                    <div style="height: 250px; background: #fafafa; border: 2px dashed #eee; border-radius: 20px;" class="d-flex align-items-center justify-content-center text-muted">
-                        Area Grafik Penjualan (Akan muncul setelah ada data bulanan)
-                    </div>
-                </div>
+                
             </div>
 
             <div class="col-lg-4">
@@ -128,7 +117,7 @@ $q_pelanggan = db_fetch_one($conn, "SELECT COUNT(DISTINCT id_pelanggan) as total
                         </div>
                         <div class="col-4 border-start">
                             <div class="fw-bold text-warning"><?= $q_expiry['total'] ?></div>
-                            <div class="text-muted" style="font-size: 0.65rem;">Mendekati Exp</div>
+                            <div class="text-muted" style="font-size: 0.65rem;">Expired</div>
                         </div>
                         <div class="col-4 border-start">
                             <div class="fw-bold text-primary"><?= $q_new_items['total'] ?></div>
@@ -148,20 +137,8 @@ $q_pelanggan = db_fetch_one($conn, "SELECT COUNT(DISTINCT id_pelanggan) as total
                         <p class="text-muted small">Total Pelanggan Terdaftar</p>
                     </div>
 
-                    <div class="p-3 rounded-4 bg-light small mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Belanja di Toko:</span>
-                            <span class="fw-bold"><?= number_format(($q_pelanggan['total'] ?? 0) * 0.8) ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Pesanan Online:</span>
-                            <span class="fw-bold"><?= number_format(($q_pelanggan['total'] ?? 0) * 0.2) ?></span>
-                        </div>
-                    </div>
 
-                    <a href="#" class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm">
-                        Kelola Pelanggan
-                    </a>
+                   
                 </div>
 
             </div>
