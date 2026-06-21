@@ -13,10 +13,17 @@ if (!isset($_SESSION['petugas'])) {
 $petugas  = $_SESSION['petugas'];
 $halaman  = $halaman  ?? 'Dashboard';
 $base_url = BASE_URL   ?? '';
-$initials = strtoupper(substr($petugas['nama_petugas'], 0, 1));
-if (strpos($petugas['nama_petugas'], ' ') !== false) {
-    $parts = explode(' ', $petugas['nama_petugas']);
-    $initials = strtoupper($parts[0][0] . $parts[1][0]);
+
+// PERBAIKAN: Ambil nama_petugas, jika null/tidak ada, pakai fallback 'name_petugas' atau 'Admin'
+$nama_user = $petugas['nama_petugas'] ?? $petugas['nama_petugas'] ?? 'Admin';
+
+// PERBAIKAN: Gunakan variabel $nama_user yang dijamin tidak null agar substr() dan strpos() tidak error
+$initials = strtoupper(substr($nama_user, 0, 1));
+if (strpos($nama_user, ' ') !== false) {
+    $parts = explode(' ', $nama_user);
+    if (isset($parts[1][0])) {
+        $initials = strtoupper($parts[0][0] . $parts[1][0]);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -62,6 +69,3 @@ if (strpos($petugas['nama_petugas'], ' ') !== false) {
   </div>
 </div>
 <!-- /TOPBAR -->
- 
-
-

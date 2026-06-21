@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($row && md5($password) === $row['password_hash']) {
             $_SESSION['petugas'] = [
                 'id_petugas'   => $row['id_petugas'],
-                'name_petugas' => $row['nama_petugas'],
+                'nama_petugas' => $row['nama_petugas'],
                 'username'     => $row['username'],
             ];
             header('Location: index.php');
